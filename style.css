@@ -196,4 +196,102 @@ tbody tr:hover td {
 
 tbody tr:last-child td { border-bottom: none; }
 
+#resultsBody tr {
+  cursor: pointer;
+}
+
+#resultsBody tr.row-selected td {
+  background: rgba(15, 118, 110, 0.14);
+}
+
+#detailPanel {
+  padding: 1rem;
+}
+
+.detail-panel {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+}
+
+.detail-panel.hidden {
+  display: none;
+}
+
+.detail-panel-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 1.25rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.detail-subsection {
+  margin-bottom: 1.75rem;
+  padding: 0 0.25rem;
+}
+
+.detail-subsection:last-of-type {
+  margin-bottom: 0;
+}
+
+.detail-subsection h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--text);
+}
+
+.detail-summary {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0 0 0.75rem 0;
+  line-height: 1.5;
+}
+
+.detail-fontana-parts {
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.detail-fontana-parts .detail-part-row {
+  padding: 0.4rem 0.5rem 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 1rem;
+  align-items: baseline;
+}
+
+.detail-fontana-parts .detail-part-row:last-child {
+  border-bottom: none;
+}
+
+.detail-ryff-table-wrap {
+  max-height: 280px;
+  overflow-y: auto;
+  margin: 0.75rem 0;
+  padding: 0 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.detail-ryff-table {
+  font-size: 0.8125rem;
+  min-width: 100%;
+}
+
+.detail-ryff-table th,
+.detail-ryff-table td {
+  padding: 0.4rem 0.75rem;
+  white-space: nowrap;
+}
+
+.detail-ryff-total {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0.75rem 0 0 0;
+  padding: 0 0.25rem 0 0;
+}
+
 .interpret { font-size: 0.8125rem; color: var(--text-muted); }

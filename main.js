@@ -199,6 +199,80 @@
     return { total, level };
   }
 
+  const FONTANA_PART_LABELS = {
+    1: 'Вопрос 1',
+    2: 'Вопрос 2 (пункты а–ц)',
+    3: 'Вопрос 3', 6: 'Вопрос 6', 7: 'Вопрос 7', 8: 'Вопрос 8', 9: 'Вопрос 9',
+    10: 'Вопрос 10', 11: 'Вопрос 11', 12: 'Вопрос 12', 13: 'Вопрос 13', 14: 'Вопрос 14',
+    15: 'Вопрос 15', 16: 'Вопрос 16', 17: 'Вопрос 17', 18: 'Вопрос 18', 19: 'Вопрос 19'
+  };
+
+  function getFontanaPoints(q, val) {
+    if (q === 1) return fontanaScoreOption1(val);
+    if (q === 2) return val.includes('да') ? 1 : 0;
+    if (q === 3) return fontanaKeyQ3(val);
+    if (q === 6) return fontanaKeyQ6(val);
+    if (q === 7) return fontanaKeyQ7(val);
+    if (q === 8) return fontanaKeyQ8(val);
+    if (q === 9) return fontanaKeyQ9(val);
+    if (q === 10) return fontanaKeyQ10(val);
+    if (q === 11) return fontanaKeyQ11(val);
+    if (q === 12) return fontanaKeyQ12(val);
+    if (q === 13) return fontanaKeyQ13(val);
+    if (q === 14) return fontanaKeyQ14(val);
+    if (q === 15) return fontanaKeyQ15(val);
+    if (q === 16) return fontanaKeyQ16(val);
+    if (q === 17) return fontanaKeyQ17(val);
+    if (q === 18) return fontanaKeyQ18(val);
+    if (q === 19) return fontanaKeyQ19(val);
+    return 0;
+  }
+
+  function scoreFontanaDetails(row, config) {
+    const parts = [];
+    let sum = 0;
+    let q2Count = 0;
+    for (const [offset, q] of config.fontanaColToKey) {
+      const val = getCell(row, FONTANA_START + offset);
+      const rawAnswer = row[FONTANA_START + offset];
+      const displayAnswer = rawAnswer != null && rawAnswer !== '' ? String(rawAnswer).trim() : '—';
+      const pt = getFontanaPoints(q, val);
+      sum += pt;
+      let label = FONTANA_PART_LABELS[q];
+      if (q === 2) {
+        q2Count++;
+        label = 'Вопрос 2 (пункт ' + q2Count + ')';
+      }
+      parts.push({ label: label || ('Вопрос ' + q), answer: displayAnswer, points: pt });
+    }
+    let level = '';
+    if (sum <= 15) level = 'стресс не является проблемой';
+    else if (sum <= 30) level = 'умеренный уровень стресса';
+    else if (sum <= 45) level = 'стресс — проблема, нужна коррекция';
+    else level = 'высокий уровень стресса, требуется помощь';
+    return { total: sum, level, parts };
+  }
+
+  function scoreRyffDetails(row, config) {
+    const start = config.ryffStartCol;
+    const items = [];
+    for (let i = 0; i < RYFF_ITEMS; i++) {
+      const num = getCellNum(row, start + i);
+      const item = i + 1;
+      const reverse = RYFF_REVERSE.has(item);
+      let pt = 0;
+      const answer = (num >= 1 && num <= 6) ? num : '';
+      if (num >= 1 && num <= 6) pt = reverse ? (7 - num) : num;
+      items.push({ num: item, answer, points: pt, reverse });
+    }
+    const total = items.reduce((a, b) => a + b.points, 0);
+    let level = '';
+    if (total <= 323) level = 'низкий';
+    else if (total <= 353) level = 'средний';
+    else level = 'высокий';
+    return { total, level, items };
+  }
+
   let lastWorkbook = null;
   let lastHeaders = [];
   let lastRows = [];
@@ -280,18 +354,66 @@
         ryffLevel: ryff.level
       });
     }
+    selectedRowIndex = -1;
+    hideDetailPanel();
     renderTable();
     document.getElementById('resultsSection').classList.add('visible');
     document.getElementById('btnDownload').disabled = false;
     showMessage('Рассчитано строк: ' + lastResults.length);
   }
 
+  let selectedRowIndex = -1;
+
+  function hideDetailPanel() {
+    const panel = document.getElementById('detailPanel');
+    panel.classList.add('hidden');
+    const rows = document.querySelectorAll('#resultsBody tr.row-selected');
+    rows.forEach(tr => tr.classList.remove('row-selected'));
+  }
+
+  function showDetailForRow(i) {
+    if (i < 0 || i >= lastRows.length || !lastConfig) return;
+    const row = lastRows[i];
+    const res = lastResults[i];
+    const fontanaDetail = scoreFontanaDetails(row, lastConfig);
+    const ryffDetail = scoreRyffDetails(row, lastConfig);
+
+    document.getElementById('detailPanelTitle').textContent =
+      'Расчёт для: ' + [res.date, res.gender, res.age, res.experience, res.field].filter(Boolean).join(', ') || 'строка ' + (i + 1);
+
+    document.getElementById('detailFontanaSummary').textContent =
+      'Итого: ' + fontanaDetail.total + ' баллов. Уровень: ' + fontanaDetail.level + '.';
+
+    const fontanaPartsEl = document.getElementById('detailFontanaParts');
+    fontanaPartsEl.innerHTML = fontanaDetail.parts.map(p => {
+      return '<div class="detail-part-row"><span>' + escapeHtml(p.label) + '</span><span>' + escapeHtml(p.answer) + '</span><span>' + p.points + ' балл.</span></div>';
+    }).join('');
+
+    document.getElementById('detailRyffSummary').textContent =
+      'Итого: ' + ryffDetail.total + ' баллов. Уровень: ' + ryffDetail.level + '. Прямые пункты: ответ = балл; обратные: балл = 7 − ответ.';
+
+    const ryffBody = document.getElementById('detailRyffBody');
+    ryffBody.innerHTML = ryffDetail.items.map(it => {
+      const typ = it.reverse ? 'обратный' : 'прямой';
+      return '<tr><td>' + it.num + '</td><td>' + (it.answer !== '' ? it.answer : '—') + '</td><td>' + typ + '</td><td>' + it.points + '</td></tr>';
+    }).join('');
+
+    document.getElementById('detailRyffTotal').textContent = 'Сумма по 84 пунктам: ' + ryffDetail.total + '.';
+
+    const panel = document.getElementById('detailPanel');
+    panel.classList.remove('hidden');
+    document.querySelectorAll('#resultsBody tr').forEach((tr, idx) => {
+      tr.classList.toggle('row-selected', idx === i);
+    });
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
   function renderTable() {
     const thead = document.getElementById('resultsThead');
     const tbody = document.getElementById('resultsBody');
     thead.innerHTML = '<tr><th>Дата</th><th>Пол</th><th>Возраст</th><th>Стаж работы</th><th>Сфера деятельности</th><th>Стресс (Фонтана)</th><th>Уровень стресса</th><th>Псих. благополучие (сумма)</th><th>Уровень</th></tr>';
-    tbody.innerHTML = lastResults.map((r) => {
-      return '<tr><td>' + escapeHtml(r.date) + '</td><td>' + escapeHtml(r.gender) + '</td><td>' + escapeHtml(r.age) + '</td><td>' + escapeHtml(r.experience) + '</td><td>' + escapeHtml(r.field) + '</td><td>' + r.fontana + '</td><td class="interpret">' + r.fontanaLevel + '</td><td>' + r.ryffTotal + '</td><td class="interpret">' + r.ryffLevel + '</td></tr>';
+    tbody.innerHTML = lastResults.map((r, i) => {
+      return '<tr data-row-index="' + i + '"><td>' + escapeHtml(r.date) + '</td><td>' + escapeHtml(r.gender) + '</td><td>' + escapeHtml(r.age) + '</td><td>' + escapeHtml(r.experience) + '</td><td>' + escapeHtml(r.field) + '</td><td>' + r.fontana + '</td><td class="interpret">' + r.fontanaLevel + '</td><td>' + r.ryffTotal + '</td><td class="interpret">' + r.ryffLevel + '</td></tr>';
     }).join('');
   }
 
@@ -381,4 +503,11 @@
 
   document.getElementById('btnCalc').addEventListener('click', runCalc);
   document.getElementById('btnDownload').addEventListener('click', downloadResults);
+
+  document.getElementById('resultsBody').addEventListener('click', function (e) {
+    const tr = e.target.closest('tr');
+    if (!tr || !tr.hasAttribute('data-row-index')) return;
+    const idx = parseInt(tr.getAttribute('data-row-index'), 10);
+    showDetailForRow(idx);
+  });
 })();

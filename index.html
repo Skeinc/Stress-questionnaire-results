@@ -36,6 +36,25 @@
         <tbody id="resultsBody"></tbody>
       </table>
     </div>
+    <div class="card detail-panel hidden" id="detailPanel">
+      <h2 class="detail-panel-title" id="detailPanelTitle">Расчёт для выбранной строки</h2>
+      <section class="detail-subsection">
+        <h3>Шкала Фонтана (профессиональный стресс)</h3>
+        <p class="detail-summary" id="detailFontanaSummary"></p>
+        <div class="detail-fontana-parts" id="detailFontanaParts"></div>
+      </section>
+      <section class="detail-subsection">
+        <h3>Опросник Риффа (психологическое благополучие)</h3>
+        <p class="detail-summary" id="detailRyffSummary"></p>
+        <div class="detail-ryff-table-wrap" id="detailRyffTableWrap">
+          <table class="detail-ryff-table" id="detailRyffTable">
+            <thead><tr><th>№</th><th>Ответ</th><th>Тип</th><th>Балл</th></tr></thead>
+            <tbody id="detailRyffBody"></tbody>
+          </table>
+        </div>
+        <p class="detail-ryff-total" id="detailRyffTotal"></p>
+      </section>
+    </div>
   </div>
 
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
