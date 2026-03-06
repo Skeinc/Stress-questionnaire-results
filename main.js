@@ -39,11 +39,12 @@
     const fontanaColToKey = [];
     for (let offset = 0; offset < ryffStartCol - FONTANA_START; offset++) {
       if (offset === 0) fontanaColToKey.push([offset, 1]);
-      else if (offset >= 1 && offset <= 23) fontanaColToKey.push([offset, 2]);
-      else if (offset === 24) fontanaColToKey.push([offset, 3]);
-      else if (offset === 25) fontanaColToKey.push([offset, 6]);
-      else if (offset === 26) fontanaColToKey.push([offset, 7]);
-      else if (offset >= 27 && offset <= 29) continue;
+      else if (offset >= 1 && offset <= 22) fontanaColToKey.push([offset, 2]);
+      else if (offset === 23) fontanaColToKey.push([offset, 3]);
+      else if (offset === 24) fontanaColToKey.push([offset, 4]);
+      else if (offset === 25) fontanaColToKey.push([offset, 5]);
+      else if (offset >= 26 && offset <= 28) fontanaColToKey.push([offset, 6]);
+      else if (offset === 29) fontanaColToKey.push([offset, 7]);
       else if (offset === 30) fontanaColToKey.push([offset, 8]);
       else if (offset === 31) fontanaColToKey.push([offset, 9]);
       else if (offset === 32) fontanaColToKey.push([offset, 10]);
@@ -55,7 +56,7 @@
       else if (offset === 38) fontanaColToKey.push([offset, 16]);
       else if (offset === 39) fontanaColToKey.push([offset, 17]);
       else if (offset === 40) fontanaColToKey.push([offset, 18]);
-      else if (offset === 41) fontanaColToKey.push([offset, 19]);
+      else if (offset === 41) fontanaColToKey.push([offset, 18]);
     }
     return { ryffStartCol, fontanaColToKey };
   }
@@ -77,6 +78,14 @@
     return 0;
   }
 
+  function fontanaKeyQ4(val) {
+    return val.includes('нет') ? 1 : 0;
+  }
+
+  function fontanaKeyQ5(val) {
+    return val.includes('нет') ? 1 : 0;
+  }
+
   function fontanaKeyQ6(val) {
     if (val.includes('да')) return 0;
     if (val.includes('нет')) return 1;
@@ -84,70 +93,70 @@
   }
 
   function fontanaKeyQ7(val) {
-    return (val.includes('да') || val.includes('нет')) ? 1 : 0;
+    if (val.includes('сам') || val.includes('сама') || val.includes('вы сами')) return 0;
+    if (val.includes('другой') || val.includes('другим')) return 1;
+    return 0;
   }
 
   function fontanaKeyQ8(val) {
-    if (val.includes('сам') || val.includes('сама')) return 2;
-    return 1;
+    if (val.includes('сильно')) return 2;
+    if (val.includes('умеренно')) return 1;
+    if (val.includes('слабо')) return 0;
+    return 0;
   }
 
   function fontanaKeyQ9(val) {
-    if (val.includes('сильно')) return 0;
-    if (val.includes('умеренно')) return 1;
-    if (val.includes('слабо')) return 2;
+    if (val.includes('часто')) return 0;
+    if (val.includes('иногда')) return 1;
+    if (val.includes('изредка') || val.includes('редко')) return 2;
     return 0;
   }
 
   function fontanaKeyQ10(val) {
-    if (val.includes('часто')) return 1;
-    return 0;
+    return val.includes('да') ? 1 : 0;
   }
 
   function fontanaKeyQ11(val) {
-    if (val.includes('да')) return 2;
-    if (val.includes('нет')) return 1;
+    if (val.includes('постоянно')) return 2;
+    if (val.includes('иногда')) return 1;
     return 0;
   }
 
   function fontanaKeyQ12(val) {
-    if (val.includes('постоянно')) return 0;
+    if (val.includes('как правило')) return 0;
     if (val.includes('иногда')) return 1;
     if (val.includes('изредка') || val.includes('редко')) return 2;
     return 0;
   }
 
   function fontanaKeyQ13(val) {
-    if (val.includes('как правило') || val.includes('как правило')) return 1;
-    return 0;
+    return val.includes('нет') ? 1 : 0;
   }
 
   function fontanaKeyQ14(val) {
-    return val.includes('да') ? 1 : 0;
+    return val.includes('нет') ? 1 : 0;
   }
 
   function fontanaKeyQ15(val) {
-    return val.includes('да') ? 1 : 0;
+    return val.includes('нет') ? 1 : 0;
   }
 
   function fontanaKeyQ16(val) {
-    return val.includes('да') ? 2 : 1;
+    if (val.includes('часто')) return 2;
+    if (val.includes('иногда')) return 1;
+    if (val.includes('редко')) return 0;
+    return 0;
   }
 
   function fontanaKeyQ17(val) {
-    if (val.includes('часто')) return 0;
-    if (val.includes('иногда')) return 1;
-    if (val.includes('редко')) return 2;
+    if (val.includes('большинств') || val.includes('большинство')) return 0;
+    if (val.includes('некотор') || val.includes('некоторые')) return 1;
+    if (val.includes('изредка') || val.includes('редко')) return 2;
     return 0;
   }
 
   function fontanaKeyQ18(val) {
-    if (val.includes('большинств') || val.includes('большинство')) return 1;
-    return 0;
-  }
-
-  function fontanaKeyQ19(val) {
-    return val.includes('да') ? 1 : 0;
+    return val.includes('нет') ? 1 : 0;
   }
 
   function scoreFontana(row, config) {
@@ -157,6 +166,8 @@
       if (q === 1) sum += fontanaScoreOption1(val);
       else if (q === 2) sum += val.includes('да') ? 1 : 0;
       else if (q === 3) sum += fontanaKeyQ3(val);
+      else if (q === 4) sum += fontanaKeyQ4(val);
+      else if (q === 5) sum += fontanaKeyQ5(val);
       else if (q === 6) sum += fontanaKeyQ6(val);
       else if (q === 7) sum += fontanaKeyQ7(val);
       else if (q === 8) sum += fontanaKeyQ8(val);
@@ -170,7 +181,6 @@
       else if (q === 16) sum += fontanaKeyQ16(val);
       else if (q === 17) sum += fontanaKeyQ17(val);
       else if (q === 18) sum += fontanaKeyQ18(val);
-      else if (q === 19) sum += fontanaKeyQ19(val);
     }
     let level = '';
     if (sum <= 15) level = 'стресс не является проблемой';
@@ -202,15 +212,18 @@
   const FONTANA_PART_LABELS = {
     1: 'Вопрос 1',
     2: 'Вопрос 2 (пункты а–ц)',
-    3: 'Вопрос 3', 6: 'Вопрос 6', 7: 'Вопрос 7', 8: 'Вопрос 8', 9: 'Вопрос 9',
-    10: 'Вопрос 10', 11: 'Вопрос 11', 12: 'Вопрос 12', 13: 'Вопрос 13', 14: 'Вопрос 14',
-    15: 'Вопрос 15', 16: 'Вопрос 16', 17: 'Вопрос 17', 18: 'Вопрос 18', 19: 'Вопрос 19'
+    3: 'Вопрос 3', 4: 'Вопрос 4', 5: 'Вопрос 5', 6: 'Вопрос 6',
+    7: 'Вопрос 7', 8: 'Вопрос 8', 9: 'Вопрос 9', 10: 'Вопрос 10',
+    11: 'Вопрос 11', 12: 'Вопрос 12', 13: 'Вопрос 13', 14: 'Вопрос 14',
+    15: 'Вопрос 15', 16: 'Вопрос 16', 17: 'Вопрос 17', 18: 'Вопрос 18'
   };
 
   function getFontanaPoints(q, val) {
     if (q === 1) return fontanaScoreOption1(val);
     if (q === 2) return val.includes('да') ? 1 : 0;
     if (q === 3) return fontanaKeyQ3(val);
+    if (q === 4) return fontanaKeyQ4(val);
+    if (q === 5) return fontanaKeyQ5(val);
     if (q === 6) return fontanaKeyQ6(val);
     if (q === 7) return fontanaKeyQ7(val);
     if (q === 8) return fontanaKeyQ8(val);
@@ -224,14 +237,16 @@
     if (q === 16) return fontanaKeyQ16(val);
     if (q === 17) return fontanaKeyQ17(val);
     if (q === 18) return fontanaKeyQ18(val);
-    if (q === 19) return fontanaKeyQ19(val);
     return 0;
   }
+
+  const FONTANA_Q6_SUBLABELS = ['с начальником', 'с коллегами', 'с членами семьи'];
 
   function scoreFontanaDetails(row, config) {
     const parts = [];
     let sum = 0;
     let q2Count = 0;
+    let q6Count = 0;
     for (const [offset, q] of config.fontanaColToKey) {
       const val = getCell(row, FONTANA_START + offset);
       const rawAnswer = row[FONTANA_START + offset];
@@ -242,6 +257,10 @@
       if (q === 2) {
         q2Count++;
         label = 'Вопрос 2 (пункт ' + q2Count + ')';
+      } else if (q === 6) {
+        q6Count++;
+        const sub = FONTANA_Q6_SUBLABELS[q6Count - 1];
+        label = sub ? 'Вопрос 6 (' + sub + ')' : 'Вопрос 6';
       }
       parts.push({ label: label || ('Вопрос ' + q), answer: displayAnswer, points: pt });
     }
