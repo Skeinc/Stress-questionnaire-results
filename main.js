@@ -358,7 +358,7 @@
       const date = formatDate(row[0]);
       const gender = row[1] != null ? String(row[1]).trim() : '';
       const age = row[2] != null ? String(row[2]).trim() : '';
-      const experience = row[3] != null ? String(row[3]).trim() : '';
+      const experience = parseExperience(row[3]);
       const field = row[4] != null ? String(row[4]).trim() : '';
       lastResults.push({
         date,
@@ -433,6 +433,25 @@
     tbody.innerHTML = lastResults.map((r, i) => {
       return '<tr data-row-index="' + i + '"><td>' + escapeHtml(r.date) + '</td><td>' + escapeHtml(r.gender) + '</td><td>' + escapeHtml(r.age) + '</td><td>' + escapeHtml(r.experience) + '</td><td>' + escapeHtml(r.field) + '</td><td>' + r.fontana + '</td><td class="interpret">' + r.fontanaLevel + '</td><td>' + r.ryffTotal + '</td><td class="interpret">' + r.ryffLevel + '</td></tr>';
     }).join('');
+  }
+
+  function parseExperience(raw) {
+    if (raw == null || raw === '') return '';
+    const str = String(raw).trim();
+    const num = Number(str);
+    // Если это большое число (> 100), это скорее всего Excel serial date
+    // например "1.5" было интерпретировано как "1 мая" и стало числом ~46143
+    if (!isNaN(num) && num > 100) {
+      // Конвертируем Excel serial date обратно в дату
+      const d = new Date((num - 25569) * 86400 * 1000);
+      if (!isNaN(d.getTime())) {
+        const day = d.getDate();
+        const month = d.getMonth() + 1;
+        // Возвращаем в формате "день.месяц" как было введено изначально
+        return day + '.' + month;
+      }
+    }
+    return str;
   }
 
   function formatDate(raw) {
