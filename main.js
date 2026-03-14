@@ -56,7 +56,6 @@
       else if (offset === 38) fontanaColToKey.push([offset, 16]);
       else if (offset === 39) fontanaColToKey.push([offset, 17]);
       else if (offset === 40) fontanaColToKey.push([offset, 18]);
-      else if (offset === 41) fontanaColToKey.push([offset, 18]);
     }
     return { ryffStartCol, fontanaColToKey };
   }
