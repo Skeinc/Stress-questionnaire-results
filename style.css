@@ -267,6 +267,22 @@ tbody tr:last-child td { border-bottom: none; }
   border-bottom: none;
 }
 
+.detail-ryff-scales-heading {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0.75rem 0 0.35rem 0;
+  color: var(--text);
+}
+
+.detail-ryff-scales-wrap {
+  margin: 0 0 0.75rem 0;
+}
+
+.detail-ryff-scales-table td:first-child {
+  white-space: normal;
+  max-width: 16rem;
+}
+
 .detail-ryff-table-wrap {
   max-height: 280px;
   overflow-y: auto;

@@ -7,6 +7,46 @@
     54, 55, 56, 58, 60, 61, 62, 63, 65, 66, 73, 74, 75, 76, 82, 83, 84
   ]);
 
+  /** Шкалы К. Рифф (адаптация Шевеленковой, Фесенко): сумма баллов по 14 пунктам */
+  const RYFF_SCALES = [
+    {
+      key: 'ryffPositive',
+      short: 'Поз. отн.',
+      full: 'Положительные отношения с другими',
+      items: [1, 19, 25, 37, 49, 67, 79, 7, 13, 31, 43, 55, 61, 73]
+    },
+    {
+      key: 'ryffAutonomy',
+      short: 'Автономия',
+      full: 'Автономия',
+      items: [8, 14, 26, 38, 50, 68, 80, 2, 20, 32, 44, 56, 62, 74]
+    },
+    {
+      key: 'ryffEnv',
+      short: 'Упр. среда',
+      full: 'Управление средой',
+      items: [3, 21, 33, 39, 51, 57, 69, 81, 9, 15, 27, 45, 63, 75]
+    },
+    {
+      key: 'ryffGrowth',
+      short: 'Рост',
+      full: 'Личностный рост',
+      items: [10, 16, 28, 40, 46, 52, 64, 70, 4, 22, 34, 58, 76, 82]
+    },
+    {
+      key: 'ryffPurpose',
+      short: 'Цели',
+      full: 'Цели в жизни',
+      items: [5, 23, 47, 53, 59, 71, 77, 11, 17, 29, 35, 41, 65, 83]
+    },
+    {
+      key: 'ryffAccept',
+      short: 'Самопринят.',
+      full: 'Самопринятие',
+      items: [6, 12, 30, 36, 48, 72, 78, 18, 24, 42, 54, 60, 66, 84]
+    }
+  ];
+
   function norm(s) {
     if (s == null || s === '') return '';
     return String(s).trim().toLowerCase().replace(/\s+/g, ' ');
@@ -189,7 +229,7 @@
     return { raw: sum, level };
   }
 
-  function scoreRyff(row, config) {
+  function computeRyffPoints(row, config) {
     const start = config.ryffStartCol;
     const points = [];
     for (let i = 0; i < RYFF_ITEMS; i++) {
@@ -200,12 +240,27 @@
       if (num >= 1 && num <= 6) pt = rev ? (7 - num) : num;
       points.push(pt);
     }
+    return points;
+  }
+
+  function sumRyffScales(points) {
+    const scales = {};
+    for (const s of RYFF_SCALES) {
+      let sum = 0;
+      for (const item of s.items) sum += points[item - 1];
+      scales[s.key] = sum;
+    }
+    return scales;
+  }
+
+  function scoreRyff(row, config) {
+    const points = computeRyffPoints(row, config);
     const total = points.reduce((a, b) => a + b, 0);
     let level = '';
     if (total <= 323) level = 'низкий';
     else if (total <= 353) level = 'средний';
     else level = 'высокий';
-    return { total, level };
+    return { total, level, scales: sumRyffScales(points) };
   }
 
   const FONTANA_PART_LABELS = {
@@ -272,23 +327,22 @@
   }
 
   function scoreRyffDetails(row, config) {
+    const points = computeRyffPoints(row, config);
     const start = config.ryffStartCol;
     const items = [];
     for (let i = 0; i < RYFF_ITEMS; i++) {
       const num = getCellNum(row, start + i);
       const item = i + 1;
       const reverse = RYFF_REVERSE.has(item);
-      let pt = 0;
       const answer = (num >= 1 && num <= 6) ? num : '';
-      if (num >= 1 && num <= 6) pt = reverse ? (7 - num) : num;
-      items.push({ num: item, answer, points: pt, reverse });
+      items.push({ num: item, answer, points: points[i], reverse });
     }
-    const total = items.reduce((a, b) => a + b.points, 0);
+    const total = points.reduce((a, b) => a + b, 0);
     let level = '';
     if (total <= 323) level = 'низкий';
     else if (total <= 353) level = 'средний';
     else level = 'высокий';
-    return { total, level, items };
+    return { total, level, items, scales: sumRyffScales(points) };
   }
 
   let lastWorkbook = null;
@@ -369,7 +423,13 @@
         fontana: fontana.raw,
         fontanaLevel: fontana.level,
         ryffTotal: ryff.total,
-        ryffLevel: ryff.level
+        ryffLevel: ryff.level,
+        ryffPositive: ryff.scales.ryffPositive,
+        ryffAutonomy: ryff.scales.ryffAutonomy,
+        ryffEnv: ryff.scales.ryffEnv,
+        ryffGrowth: ryff.scales.ryffGrowth,
+        ryffPurpose: ryff.scales.ryffPurpose,
+        ryffAccept: ryff.scales.ryffAccept
       });
     }
     selectedRowIndex = -1;
@@ -410,6 +470,14 @@
     document.getElementById('detailRyffSummary').textContent =
       'Итого: ' + ryffDetail.total + ' баллов. Уровень: ' + ryffDetail.level + '. Прямые пункты: ответ = балл; обратные: балл = 7 − ответ.';
 
+    document.getElementById('detailRyffScales').innerHTML =
+      '<table class="detail-ryff-table detail-ryff-scales-table"><thead><tr><th>Шкала</th><th>Сумма баллов</th></tr></thead><tbody>' +
+      RYFF_SCALES.map(s => {
+        const v = ryffDetail.scales[s.key];
+        return '<tr><td>' + escapeHtml(s.full) + '</td><td>' + v + '</td></tr>';
+      }).join('') +
+      '</tbody></table>';
+
     const ryffBody = document.getElementById('detailRyffBody');
     ryffBody.innerHTML = ryffDetail.items.map(it => {
       const typ = it.reverse ? 'обратный' : 'прямой';
@@ -429,9 +497,15 @@
   function renderTable() {
     const thead = document.getElementById('resultsThead');
     const tbody = document.getElementById('resultsBody');
-    thead.innerHTML = '<tr><th>Дата</th><th>Пол</th><th>Возраст</th><th>Стаж работы</th><th>Сфера деятельности</th><th>Стресс (Фонтана)</th><th>Уровень стресса</th><th>Псих. благополучие (сумма)</th><th>Уровень</th></tr>';
+    const scaleThs = RYFF_SCALES.map(s =>
+      '<th title="' + escapeHtml(s.full) + '">' + escapeHtml(s.short) + '</th>'
+    ).join('');
+    thead.innerHTML =
+      '<tr><th>Дата</th><th>Пол</th><th>Возраст</th><th>Стаж работы</th><th>Сфера деятельности</th><th>Стресс (Фонтана)</th><th>Уровень стресса</th><th>Псих. благополучие (сумма)</th><th>Уровень</th>' +
+      scaleThs + '</tr>';
     tbody.innerHTML = lastResults.map((r, i) => {
-      return '<tr data-row-index="' + i + '"><td>' + escapeHtml(r.date) + '</td><td>' + escapeHtml(r.gender) + '</td><td>' + escapeHtml(r.age) + '</td><td>' + escapeHtml(r.experience) + '</td><td>' + escapeHtml(r.field) + '</td><td>' + r.fontana + '</td><td class="interpret">' + r.fontanaLevel + '</td><td>' + r.ryffTotal + '</td><td class="interpret">' + r.ryffLevel + '</td></tr>';
+      return '<tr data-row-index="' + i + '"><td>' + escapeHtml(r.date) + '</td><td>' + escapeHtml(r.gender) + '</td><td>' + escapeHtml(r.age) + '</td><td>' + escapeHtml(r.experience) + '</td><td>' + escapeHtml(r.field) + '</td><td>' + r.fontana + '</td><td class="interpret">' + r.fontanaLevel + '</td><td>' + r.ryffTotal + '</td><td class="interpret">' + r.ryffLevel + '</td>' +
+        '<td>' + r.ryffPositive + '</td><td>' + r.ryffAutonomy + '</td><td>' + r.ryffEnv + '</td><td>' + r.ryffGrowth + '</td><td>' + r.ryffPurpose + '</td><td>' + r.ryffAccept + '</td></tr>';
     }).join('');
   }
 
@@ -501,7 +575,11 @@
 
   function downloadResults() {
     if (!lastResults.length) return;
-    const headers = ['Дата', 'Пол', 'Возраст', 'Стаж работы', 'Сфера деятельности', 'Стресс (Фонтана)', 'Уровень стресса', 'Псих. благополучие (сумма)', 'Уровень'];
+    const headers = [
+      'Дата', 'Пол', 'Возраст', 'Стаж работы', 'Сфера деятельности',
+      'Стресс (Фонтана)', 'Уровень стресса', 'Псих. благополучие (сумма)', 'Уровень',
+      ...RYFF_SCALES.map(s => s.full)
+    ];
     const rows = lastResults.map(r => [
       r.date,
       r.gender,
@@ -511,7 +589,13 @@
       r.fontana,
       r.fontanaLevel,
       r.ryffTotal,
-      r.ryffLevel
+      r.ryffLevel,
+      r.ryffPositive,
+      r.ryffAutonomy,
+      r.ryffEnv,
+      r.ryffGrowth,
+      r.ryffPurpose,
+      r.ryffAccept
     ]);
     const data = [headers, ...rows];
     const ws = XLSX.utils.aoa_to_sheet(data);
